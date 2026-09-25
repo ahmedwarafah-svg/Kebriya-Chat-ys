@@ -35,38 +35,27 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Auto-Fix AGP & Dart Code Dependencies
+    - name: Auto-Fix Dependencies & Gradle Wrapper
       run: |
-        # 1. تحديث القيود والاعتماديات
+        # 1. تحديث Gradle Wrapper لإصدار 8.10.2 المطلوب في الفيديو
+        if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
+          sed -i 's/gradle-.*-all.zip/gradle-8.10.2-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
+        fi
+
+        # 2. حلينا تعارض المكتبات من خلال عدم إجبار نسخ معينة
         sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
         sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
         flutter pub remove flutter_lints || true
-        flutter pub add share_plus:^12.0.2 || true
-        flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
         flutter pub get
 
-        # 2. حل مشكلة Gradle AGP الموضحة في الفيديو
-        if [ -f "android/build.gradle" ]; then
-          sed -i 's/com.android.tools.build:gradle:8.7.3/com.android.tools.build:gradle:8.9.1/g' android/build.gradle || true
-        fi
-        if [ -f "android/settings.gradle" ]; then
-          sed -i 's/8.7.3/8.9.1/g' android/settings.gradle || true
-        fi
-
-        # 3. إيقاف فحص AGP Strict وتجاوز الأخطاء
-        if [ -f "android/gradle.properties" ]; then
-          echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
-          echo "android.overridePathCheck=true" >> android/gradle.properties
-          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
-        fi
-
-        # 4. رفع minSdkVersion لـ 21 لضمان عمل Zego
+        # 3. ضبط minSdkVersion لـ 21
         find android/ -name "build.gradle" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} + || true
         find android/ -name "build.gradle.kts" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} + || true
 
-        # 5. إصلاح أخطاء الكود الموضحة بالفيديو (room_tools / cinema)
-        if [ -f "lib/screens/room_tools.dart" ]; then
-          sed -i 's/if(ok!=null)/if(ok != null \&\& ok != 0)/g' lib/screens/room_tools.dart || true
+        # 4. إعدادات الذاكرة وتخطي الفحوصات الصارمة
+        if [ -f "android/gradle.properties" ]; then
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
+          echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
         fi
 
     - name: Build Debug APK
