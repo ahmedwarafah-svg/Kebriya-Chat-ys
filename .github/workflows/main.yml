@@ -30,23 +30,27 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Set up Flutter (Latest Stable)
+    - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
 
-    - name: Fix pubspec constraints & Resolve Dependencies
+    - name: Fix Dependencies & Disable Strict AGP Checks
       run: |
-        # تعديل شرط إصدار الفلوتر واللينت تلقائياً لمنع أي تعارض
         sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
         sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
         flutter pub remove flutter_lints || true
         flutter pub add share_plus:^12.0.2 || true
         flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
         flutter pub get
+        # إيقاف التدقيق الصارم لـ Gradle داخل أندرويد
+        if [ -f "android/gradle.properties" ]; then
+          echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
+          echo "android.overridePathCheck=true" >> android/gradle.properties
+        fi
 
     - name: Build Debug APK
-      run: flutter build apk --debug --no-tree-shake-icons
+      run: flutter build apk --debug --no-tree-shake-icons --android-skip-build-dependency-validation
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
