@@ -35,8 +35,11 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Install Dependencies
-      run: flutter pub get
+    - name: Fix Dependencies & Resolve Conflicts
+      run: |
+        flutter pub add share_plus:^12.0.2
+        flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6
+        flutter pub get
 
     - name: Build APK Release
       run: flutter build apk --release --no-tree-shake-icons
