@@ -35,34 +35,34 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Auto-Fix Dependencies & Build Settings
+    - name: Auto-Fix Dependencies & Gradle Config
       run: |
-        # 1. ضبط الاعتماديات المباشرة
+        # 1. تصحيح قيود pubspec والمكتبات المتعارضة
         sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
         sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
         flutter pub remove flutter_lints || true
         flutter pub add share_plus:^12.0.0 || true
         flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.10 || true
-        flutter pub get --supress-analytics || flutter pub get
+        flutter pub get
 
-        # 2. إجبار minSdkVersion 21
+        # 2. تحديث Gradle Wrapper ليكون 8.10.2
+        if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
+          sed -i 's/gradle-.*-all.zip/gradle-8.10.2-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
+          sed -i 's/gradle-.*-bin.zip/gradle-8.10.2-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
+        fi
+
+        # 3. تعديل minSdkVersion لـ 21
         find android/ -name "build.gradle" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} + || true
         find android/ -name "build.gradle.kts" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} + || true
 
-        # 3. إعدادات تجنب توقف البناء عند وجود أخطاء صغرية
+        # 4. إعدادات تجنب فشل البناء
         if [ -f "android/gradle.properties" ]; then
           echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
           echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
-          echo "android.lintOptions.checkReleaseBuilds=false" >> android/gradle.properties
-          echo "android.lintOptions.abortOnError=false" >> android/gradle.properties
         fi
 
     - name: Build Debug APK
-      run: |
-        flutter build apk --debug \
-          --no-tree-shake-icons \
-          --android-skip-build-dependency-validation \
-          --no-sound-null-safety || flutter build apk --debug --no-tree-shake-icons
+      run: flutter build apk --debug --no-tree-shake-icons --android-skip-build-dependency-validation
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
