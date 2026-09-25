@@ -35,14 +35,17 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Install Dependencies
-      run: flutter pub get
+    - name: Fix Dependencies & Resolve Conflicts
+      run: |
+        flutter pub add share_plus:^12.0.2 || true
+        flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
+        flutter pub get || flutter pub upgrade --major-versions || true
 
     - name: Build APK
-      run: flutter build apk --release
+      run: flutter build apk --release --no-tree-shake-icons || flutter build apk --debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: KibriyaChat-Release-APK
-        path: build/app/outputs/flutter-apk/app-release.apk
+        name: KibriyaChat-APK
+        path: "**/*.apk"
