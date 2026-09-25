@@ -30,17 +30,16 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Set up Flutter (Latest)
+    - name: Set up Compatible Flutter
       uses: subosito/flutter-action@v2
       with:
+        flutter-version: '3.22.2'
         channel: 'stable'
 
-    - name: Fix Dependencies & Resolve All Conflicts
+    - name: Fix Dependencies
       run: |
         flutter pub remove flutter_lints || true
-        flutter pub add flutter_lints:^5.0.0 || true
-        flutter pub add share_plus:^12.0.2 || true
-        flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
+        flutter pub add share_plus:^10.0.0 || true
         flutter pub get
 
     - name: Build Debug APK
