@@ -24,28 +24,26 @@ jobs:
           fi
         fi
 
-    - name: Set up Java
+    - name: Set up Java 11
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '11'
 
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
+        flutter-version: '3.19.6'
 
-    - name: Fix Dependencies & Resolve Conflicts
-      run: |
-        flutter pub add share_plus:^12.0.2 || true
-        flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
-        flutter pub get || flutter pub upgrade --major-versions || true
+    - name: Install Dependencies
+      run: flutter pub get
 
-    - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons || flutter build apk --debug
+    - name: Build APK Release
+      run: flutter build apk --release --no-tree-shake-icons
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: KibriyaChat-APK
-        path: "**/*.apk"
+        path: "**/build/app/outputs/flutter-apk/*.apk"
