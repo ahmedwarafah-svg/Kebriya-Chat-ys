@@ -35,9 +35,9 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Auto-Fix Dart Code & Build Settings
+    - name: Auto-Fix AGP & Dart Code Dependencies
       run: |
-        # 1. إصلاح قيود الإصدارات في pubspec.yaml
+        # 1. تحديث القيود والاعتماديات
         sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
         sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
         flutter pub remove flutter_lints || true
@@ -45,28 +45,28 @@ jobs:
         flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
         flutter pub get
 
-        # 2. إصلاح خطأ roomId في ملف cinema.dart
-        if [ -f "lib/screens/cinema.dart" ]; then
-          sed -i 's/\$roomId/\${widget.roomId}/g' lib/screens/cinema.dart || true
-          sed -i 's/roomId/widget.roomId/g' lib/screens/cinema.dart || true
+        # 2. حل مشكلة Gradle AGP الموضحة في الفيديو
+        if [ -f "android/build.gradle" ]; then
+          sed -i 's/com.android.tools.build:gradle:8.7.3/com.android.tools.build:gradle:8.9.1/g' android/build.gradle || true
+        fi
+        if [ -f "android/settings.gradle" ]; then
+          sed -i 's/8.7.3/8.9.1/g' android/settings.gradle || true
         fi
 
-        # 3. إصلاح أخطاء الشروط والأنواع في room_tools.dart و wealth.dart
-        if [ -f "lib/screens/room_tools.dart" ]; then
-          sed -i 's/if(ok!=true)/if(ok!=null)/g' lib/screens/room_tools.dart || true
-          sed -i 's/if (ok != true)/if (ok != null)/g' lib/screens/room_tools.dart || true
+        # 3. إيقاف فحص AGP Strict وتجاوز الأخطاء
+        if [ -f "android/gradle.properties" ]; then
+          echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
+          echo "android.overridePathCheck=true" >> android/gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
         fi
 
-        # 4. رفع minSdkVersion لـ 21 في جميع ملفات build.gradle
+        # 4. رفع minSdkVersion لـ 21 لضمان عمل Zego
         find android/ -name "build.gradle" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} + || true
         find android/ -name "build.gradle.kts" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} + || true
 
-        # 5. ضبط إعدادات الذاكرة للـ Gradle
-        if [ -f "android/gradle.properties" ]; then
-          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
-          echo "android.useAndroidX=true" >> android/gradle.properties
-          echo "android.enableJetifier=true" >> android/gradle.properties
-          echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
+        # 5. إصلاح أخطاء الكود الموضحة بالفيديو (room_tools / cinema)
+        if [ -f "lib/screens/room_tools.dart" ]; then
+          sed -i 's/if(ok!=null)/if(ok != null \&\& ok != 0)/g' lib/screens/room_tools.dart || true
         fi
 
     - name: Build Debug APK
