@@ -43,8 +43,8 @@ jobs:
         flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
         flutter pub get
 
-    - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons
+    - name: Build Debug APK
+      run: flutter build apk --debug --no-tree-shake-icons
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
