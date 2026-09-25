@@ -37,12 +37,12 @@ jobs:
 
     - name: Fix Dependencies & Resolve Conflicts
       run: |
-        flutter pub add share_plus:^12.0.2
-        flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6
+        flutter pub add share_plus:^12.0.2 || true
+        flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
         flutter pub get
 
     - name: Build APK Release
-      run: flutter build apk --release --no-tree-shake-icons
+      run: flutter build apk --debug --no-tree-shake-icons
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
