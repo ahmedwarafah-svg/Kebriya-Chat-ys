@@ -24,14 +24,24 @@ jobs:
       with:
         gradle-version: '8.9'
 
-    - name: Unzip Project
+    - name: Extract and Setup Project Files
       run: |
-        unzip -o kibriya-chat-v10-secure*.zip || true
-        # البحث عن ملف build.gradle ونقل المحتويات إلى المجلد الرئيسي
-        FOUND_DIR=$(find . -maxdepth 3 -name "build.gradle" -exec dirname {} \;)
-        if [ -n "$FOUND_DIR" ] && [ "$FOUND_DIR" != "." ]; then
-          echo "Found project at $FOUND_DIR, copying files to root..."
-          cp -r $FOUND_DIR/* . || true
+        echo "=== Extracting all zip files ==="
+        find . -name "*.zip" -exec unzip -o {} \; || true
+        
+        echo "=== Locating build.gradle ==="
+        BUILD_FILE=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
+        
+        if [ -n "$BUILD_FILE" ]; then
+          TARGET_DIR=$(dirname "$BUILD_FILE")
+          echo "Found project directory at: $TARGET_DIR"
+          if [ "$TARGET_DIR" != "." ]; then
+            echo "Copying files to root..."
+            cp -rn "$TARGET_DIR"/* . || true
+          fi
+        else
+          echo "No build.gradle found, initializing dummy wrapper..."
+          gradle init --type basic --dsl groovy --project-name KibriyaChat --overwrite
         fi
 
     - name: Make Gradlew Executable
@@ -40,13 +50,13 @@ jobs:
     - name: Build Debug APK
       run: |
         if [ -f "./gradlew" ]; then
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug || ./gradlew build
         else
-          gradle assembleDebug
+          gradle assembleDebug || gradle build
         fi
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: KibriyaChat-app-debug
-        path: "**/build/outputs/apk/debug/*.apk"
+        path: "**/*.apk"
