@@ -30,20 +30,19 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Set up Flutter (3.29.0)
+    - name: Set up Flutter (Latest)
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.29.0'
         channel: 'stable'
 
     - name: Fix Dependencies & Resolve Conflicts
       run: |
-        flutter pub add share_plus:^12.0.2 || true
-        flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.6 || true
+        flutter pub remove flutter_lints || true
+        flutter pub add flutter_lints:^5.0.0 || true
         flutter pub get
 
     - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation
+      run: flutter build apk --release --no-tree-shake-icons
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
