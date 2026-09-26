@@ -43,7 +43,13 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # منح صلاحيات التنفيذ لأي ملف gradlew موجود في أي مجلد فرعي
+          # إيقاف خيار android.newDsl المتسبب في الخطأ
+          if [ -f "android/gradle.properties" ]; then
+            sed -i '/android.newDsl/d' android/gradle.properties
+            echo "android.newDsl=false" >> android/gradle.properties
+          fi
+
+          # منح صلاحيات التنفيذ لـ gradlew
           find . -name "gradlew" -exec chmod +x {} + || true
 
           # حل تعارض مكتبة share_plus
