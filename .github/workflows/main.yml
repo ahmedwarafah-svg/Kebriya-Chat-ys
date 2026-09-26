@@ -43,21 +43,18 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # مسح وتعديل أي خيارات متعبة في gradle.properties
-          if [ -f "android/gradle.properties" ]; then
-            sed -i '/android.newDsl/d' android/gradle.properties
-            echo "android.newDsl=false" >> android/gradle.properties
-            echo "android.overridePathCheck=true" >> android/gradle.properties
-          fi
+          # البحث عن جميع ملفات gradle.properties في كافة المجلدات وتعطيل newDsl
+          find . -name "gradle.properties" -exec sed -i '/android.newDsl/d' {} +
+          find . -name "gradle.properties" -exec sh -c 'echo "\nandroid.newDsl=false\nandroid.overridePathCheck=true" >> "$1"' _ {} \;
 
-          # إعطاء صلاحيات للـ gradlew
+          # منح صلاحيات Exec للـ gradlew
           find . -name "gradlew" -exec chmod +x {} + || true
 
           # حل تعارض مكتبة share_plus
           flutter pub add share_plus:^12.0.2
           flutter pub get
 
-          # البناء مع إلغاء التدقيق الصارم للـ AGP والتحذيرات
+          # البناء مع توجيه Gradle بتجاهل التحذيرات الأجبارية
           flutter build apk --debug --no-tree-shake-icons --suppress-analytics
 
       - name: Upload APK
