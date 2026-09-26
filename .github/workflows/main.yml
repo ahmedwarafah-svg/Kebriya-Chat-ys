@@ -43,15 +43,20 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # إجبار التغاضي عن إعدادات الـ DSL في جميع الملفات
-          find . -name "gradle.properties" -exec sh -c 'echo "\nandroid.newDsl=false\nandroid.overridePathCheck=true" >> "$1"' _ {} \;
+          # 1. تحديث Gradle إلى 8.14 لحل مشكلة الحد الأدنى المطلوبة من Flutter
+          find . -name "gradle-wrapper.properties" -exec sed -i 's/gradle-.*-all.zip/gradle-8.14-all.zip/g' {} +
+          find . -name "gradle-wrapper.properties" -exec sed -i 's/gradle-.*-bin.zip/gradle-8.14-bin.zip/g' {} +
 
-          # حل تعارض مكتبة share_plus
+          # 2. إضافة إعداد إلغاء newDsl لعدم التعارض
+          find . -name "gradle.properties" -exec sh -c 'echo "\nandroid.newDsl=false" >> "$1"' _ {} \;
+
+          # 3. إعطاء صلاحية التشغيل لـ gradlew
+          find . -name "gradlew" -exec chmod +x {} + || true
+
+          # 4. تحديث المكتبات والبناء
           flutter pub add share_plus:^12.0.2
           flutter pub get
-
-          # البناء مع توجيه الـ Gradle بتخطي كل تحذيرات الـ AGP الحادة
-          flutter build apk --debug --no-tree-shake-icons --build-attribute android.newDsl=false || flutter build apk --debug --no-tree-shake-icons
+          flutter build apk --debug --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
