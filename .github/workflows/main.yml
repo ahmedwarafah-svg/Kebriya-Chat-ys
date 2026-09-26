@@ -35,9 +35,9 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Auto-Fix Dependencies & Gradle Config
+    - name: Comprehensive Code & Dependency Patch
       run: |
-        # 1. تصحيح قيود pubspec والمكتبات المتعارضة
+        # 1. إصلاح pubspec وتعديل المكتبات
         sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
         sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
         flutter pub remove flutter_lints || true
@@ -45,7 +45,7 @@ jobs:
         flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.10 || true
         flutter pub get
 
-        # 2. تحديث Gradle Wrapper ليكون 8.10.2
+        # 2. ترقية Gradle Wrapper و AGP
         if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
           sed -i 's/gradle-.*-all.zip/gradle-8.10.2-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
           sed -i 's/gradle-.*-bin.zip/gradle-8.10.2-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
@@ -55,14 +55,22 @@ jobs:
         find android/ -name "build.gradle" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} + || true
         find android/ -name "build.gradle.kts" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} + || true
 
-        # 4. إعدادات تجنب فشل البناء
+        # 4. إصلاح أخطاء أكواد Dart الشائعة التي تظهر في الـ Logs
+        find lib/ -name "*.dart" -exec sed -i 's/widget\.roomId/roomId/g' {} + || true
+        find lib/ -name "*.dart" -exec sed -i 's/if(ok!=null)/if(ok != null)/g' {} + || true
+
+        # 5. إعدادات تجنب فشل البناء
         if [ -f "android/gradle.properties" ]; then
           echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
           echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
         fi
 
     - name: Build Debug APK
-      run: flutter build apk --debug --no-tree-shake-icons --android-skip-build-dependency-validation
+      run: |
+        flutter build apk --debug \
+          --no-tree-shake-icons \
+          --android-skip-build-dependency-validation || \
+        flutter build apk --debug --no-pub
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
