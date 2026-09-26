@@ -23,7 +23,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.19.6'
 
       - name: Extract zip files if exists
         run: |
@@ -43,16 +43,11 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
           
-          # إضافة صلاحيات التنفيذ لـ gradlew لو موجود
           if [ -f "android/gradlew" ]; then
             chmod +x android/gradlew
           fi
 
-          # حل تعارض مكتبة share_plus
-          flutter pub add share_plus:^12.0.2
           flutter pub get
-          
-          # أمر البناء المحدث
           flutter build apk --debug --no-tree-shake-icons
 
       - name: Upload APK
