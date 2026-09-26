@@ -35,9 +35,8 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Fix Dependencies & Smart Patch Code
+    - name: Auto Fix & Patch
       run: |
-        # 1. ضبط إعدادات pubspec بدون تعارضات
         sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
         sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
         flutter pub remove flutter_lints || true
@@ -45,33 +44,19 @@ jobs:
         flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.10 || true
         flutter pub get
 
-        # 2. رفع إصدار Gradle Wrapper إلى 8.14.0 لتوافق التابعات
         if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
           sed -i 's/gradle-.*-all.zip/gradle-8.14-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
           sed -i 's/gradle-.*-bin.zip/gradle-8.14-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
         fi
 
-        # 3. تعديل minSdkVersion إلى 21
         find android/ -name "build.gradle" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} + || true
         find android/ -name "build.gradle.kts" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} + || true
 
-        # 4. إصلاح أخطاء room_tools.dart المحددة بدقة
-        FILE="lib/screens/room_tools.dart"
-        if [ -f "$FILE" ]; then
-          # تصحيح استدعاء roomId وتفادي التكرار
-          sed -i 's/widget\.roomId/roomId/g' "$FILE" || true
-          sed -i 's/roomId/widget.roomId/g' "$FILE" || true
-          sed -i 's/widget\.widget\./widget\./g' "$FILE" || true
-          
-          # تصحيح الشروط التي تعتمد على قيم إرجاع int أو dynamic
-          sed -i 's/if (ok)/if (ok == true || ok == 1)/g' "$FILE" || true
-          sed -i 's/if(ok)/if(ok == true || ok == 1)/g' "$FILE" || true
-        fi
-
-        # 5. تكوين إعدادات ذاكرة السيرفر
-        if [ -f "android/gradle.properties" ]; then
-          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
-          echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
+        # Clean dart issues in room_tools
+        if [ -f "lib/screens/room_tools.dart" ]; then
+          sed -i 's/widget\.roomId/roomId_temp/g' lib/screens/room_tools.dart || true
+          sed -i 's/roomId/widget.roomId/g' lib/screens/room_tools.dart || true
+          sed -i 's/roomId_temp/widget.roomId/g' lib/screens/room_tools.dart || true
         fi
 
     - name: Build Debug APK
