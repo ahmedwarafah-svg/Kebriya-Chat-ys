@@ -26,7 +26,25 @@ jobs:
           channel: 'stable'
 
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          if [ -f "pubspec.yaml" ]; then
+            flutter pub get
+          else
+            cd $(find . -maxdepth 2 -name "pubspec.yaml" -exec dirname {} \;)
+            flutter pub get
+          fi
 
       - name: Build APK
-        run: flutter build apk --debug --verbose
+        run: |
+          if [ -f "pubspec.yaml" ]; then
+            flutter build apk --debug --verbose
+          else
+            cd $(find . -maxdepth 2 -name "pubspec.yaml" -exec dirname {} \;)
+            flutter build apk --debug --verbose
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-debug
+          path: "**/build/app/outputs/flutter-apk/app-debug.apk"
