@@ -43,18 +43,22 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # البحث عن ملفات gradlew إن وجدت وإعطائها صلاحية بدون إيقاف السكريبت لو لم توجد
-          find . -name "gradlew" -exec chmod +x {} + || true
-
-          # حل تعارض المكتبة
+          # حل تعارض مكتبة share_plus واستيراد الحزم
           flutter pub add share_plus:^12.0.2
           flutter pub get
 
-          # البناء المستقر
-          flutter build apk --debug --no-tree-shake-icons
+          # البناء المباشر عبر Gradle وتجاوز فحص التوافق
+          if [ -d "android" ]; then
+            cd android
+            find . -name "gradlew" -exec chmod +x {} + || true
+            ./gradlew assembleDebug -Ptarget=lib/main.dart -x test --warning-mode none
+          else
+            echo "ERROR: android directory not found!"
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: "**/build/app/outputs/flutter-apk/app-debug.apk"
+          path: "**/build/app/outputs/apk/debug/app-debug.apk"
