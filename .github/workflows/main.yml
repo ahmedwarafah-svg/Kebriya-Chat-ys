@@ -20,11 +20,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # تثبيت نسخة Flutter مستقرة وتوافقية 100% مع مشروعك وتمنع فرض AGP 9
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          channel: 'stable'
 
       - name: Extract zip files if exists
         run: |
@@ -44,18 +43,18 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # إعطاء صلاحيات التشغيل لـ gradlew
-          find . -name "gradlew" -exec chmod +x {} + || true
-
-          # تنظيف إعدادات newDsl إذا كانت موجودة
+          # تعطيل فحص newDsl تلقائياً
           find . -name "gradle.properties" -exec sh -c '
             sed -i "/android.newDsl/d" "$1"
             echo "android.newDsl=false" >> "$1"
           ' _ {} \;
 
-          # تثبيت الحزم والبناء
+          # إعطاء صلاحيات التشغيل
+          find . -name "gradlew" -exec chmod +x {} + || true
+
+          # تنزيل الحزم والبناء بفرض التجاهل للتحذيرات
           flutter pub get
-          flutter build apk --debug --no-tree-shake-icons
+          flutter build apk --debug --no-tree-shake-icons --suppress-analytics
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
