@@ -42,18 +42,15 @@ jobs:
           PROJECT_DIR=$(dirname "$PUBSPEC_PATH")
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
-          
-          if [ -f "android/gradlew" ]; then
-            chmod +x android/gradlew
-          fi
 
-          # ضبط مسار Java للـ Gradle وفلاتر بشكل مباشر
-          export JAVA_HOME=$JAVA_HOME_17_X64
-          export PATH=$JAVA_HOME/bin:$PATH
-
+          # تحديث مكتبة share_plus
           flutter pub add share_plus:^12.0.2
           flutter pub get
-          flutter build apk --debug --no-tree-shake-icons
+
+          # البناء المباشر عن طريق Gradle للتغلب على قيود AGP
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --warning-mode=none
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
