@@ -20,10 +20,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      # تثبيت نسخة Flutter مستقرة وتوافقية 100% مع مشروعك وتمنع فرض AGP 9
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.24.5'
 
       - name: Extract zip files if exists
         run: |
@@ -43,23 +44,16 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # 1. ترقية Gradle إلى 8.14 لتلبية الحد الأدنى المطلوبة من Flutter
-          find . -name "gradle-wrapper.properties" -exec sed -i 's/gradle-.*-all.zip/gradle-8.14-all.zip/g' {} +
-          find . -name "gradle-wrapper.properties" -exec sed -i 's/gradle-.*-bin.zip/gradle-8.14-bin.zip/g' {} +
-
-          # 2. تعطيل newDsl و builtInKotlin في كل ملفات gradle.properties لحل التعارض
-          find . -name "gradle.properties" -exec sh -c '
-            sed -i "/android.newDsl/d" "$1"
-            sed -i "/android.builtInKotlin/d" "$1"
-            echo "android.newDsl=false" >> "$1"
-            echo "android.builtInKotlin=false" >> "$1"
-          ' _ {} \;
-
-          # 3. إعطاء صلاحيات التشغيل للـ gradlew
+          # إعطاء صلاحيات التشغيل لـ gradlew
           find . -name "gradlew" -exec chmod +x {} + || true
 
-          # 4. تحديث المكتبات وبناء الـ APK
-          flutter pub add share_plus:^12.0.2
+          # تنظيف إعدادات newDsl إذا كانت موجودة
+          find . -name "gradle.properties" -exec sh -c '
+            sed -i "/android.newDsl/d" "$1"
+            echo "android.newDsl=false" >> "$1"
+          ' _ {} \;
+
+          # تثبيت الحزم والبناء
           flutter pub get
           flutter build apk --debug --no-tree-shake-icons
 
