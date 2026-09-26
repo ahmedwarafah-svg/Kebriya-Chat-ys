@@ -25,23 +25,13 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install dependencies
+      - name: Install dependencies & Build APK
         run: |
-          if [ -f "pubspec.yaml" ]; then
-            flutter pub get
-          else
-            cd $(find . -maxdepth 2 -name "pubspec.yaml" -exec dirname {} \;)
-            flutter pub get
-          fi
-
-      - name: Build APK
-        run: |
-          if [ -f "pubspec.yaml" ]; then
-            flutter build apk --debug --verbose
-          else
-            cd $(find . -maxdepth 2 -name "pubspec.yaml" -exec dirname {} \;)
-            flutter build apk --debug --verbose
-          fi
+          TARGET_DIR=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
+          echo "Found project directory at: $TARGET_DIR"
+          cd "$TARGET_DIR"
+          flutter pub get
+          flutter build apk --debug --verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
