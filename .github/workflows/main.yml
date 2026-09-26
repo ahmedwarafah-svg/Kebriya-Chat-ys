@@ -27,14 +27,13 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Fix Dependencies Conflicts
+      - name: Fix Dependencies
         run: |
           sed -i 's/sdk: ">=3.29.0 <4.0.0"/sdk: ">=3.0.0 <4.0.0"/g' pubspec.yaml || true
           flutter pub add share_plus:^12.0.2 || true
@@ -42,11 +41,13 @@ jobs:
 
       - name: Build APK
         run: |
-          flutter build apk --debug --no-tree-shake-icons --android-skip-build-dependency-validation
+          cd android && ./gradlew clean || true
+          cd ..
+          flutter build apk --debug --no-tree-shake-icons --no-pub --android-skip-build-dependency-validation
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: kibriya-chat-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
+          path: build/app/outputs/flutter-apk/*.apk
