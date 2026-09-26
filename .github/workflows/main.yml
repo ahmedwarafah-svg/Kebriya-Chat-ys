@@ -43,21 +43,20 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # إيقاف خيار android.newDsl المتسبب في الخطأ
+          # تعطيل الخيارات المتعارضة في gradle.properties
           if [ -f "android/gradle.properties" ]; then
             sed -i '/android.newDsl/d' android/gradle.properties
+            sed -i '/android.defaults.buildfeatures.buildconfig/d' android/gradle.properties
             echo "android.newDsl=false" >> android/gradle.properties
+            echo "org.gradle.warning.mode=none" >> android/gradle.properties
           fi
 
-          # منح صلاحيات التنفيذ لـ gradlew
-          find . -name "gradlew" -exec chmod +x {} + || true
-
-          # حل تعارض مكتبة share_plus
+          # حل تعارض المكتبة
           flutter pub add share_plus:^12.0.2
           flutter pub get
 
-          # أمر البناء المباشر
-          flutter build apk --debug --no-tree-shake-icons
+          # البناء مع إلغاء التحقق الصارم من AGP
+          flutter build apk --debug --no-tree-shake-icons --build-name=1.0.0 --build-number=1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
