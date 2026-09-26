@@ -1,8 +1,8 @@
-name: Build Flutter APK - Kibriya Chat
+name: Build Flutter APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -15,13 +15,8 @@ jobs:
 
       - name: Extract Project Files
         run: |
-          find . -name "*.zip" -exec unzip -o {} \; || true
-          BUILD_FILE=$(find . -name "pubspec.yaml" | head -n 1)
-          if [ -n "$BUILD_FILE" ]; then
-            TARGET_DIR=$(dirname "$BUILD_FILE")
-            if [ "$TARGET_DIR" != "." ]; then
-              cp -rn "$TARGET_DIR"/* . || true
-            fi
+          if [ -f kibriya-chat-v10.1-android-ready.zip ]; then
+            unzip -o kibriya-chat-v10.1-android-ready.zip
           fi
 
       - name: Set up Java 17
@@ -35,37 +30,11 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Fix Dependencies & Environment Settings
+      - name: Fix Dependencies
         run: |
-          sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
-          sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
-          flutter pub remove flutter_lints || true
-          flutter pub add share_plus:^12.0.0 || true
-          flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.10 || true
+          sed -i 's/sdk: ">=3.29.0 <4.0.0"/sdk: ">=3.0.0 <4.0.0"/g' pubspec.yaml || true
           flutter pub get
 
-          if [ -f "lib/screens/room_tools.dart" ]; then
-            sed -i 's/widget\.widget\./widget\./g' lib/screens/room_tools.dart || true
-          fi
-
-          if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
-            sed -i 's/gradle-.*-all.zip/gradle-8.14-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
-            sed -i 's/gradle-.*-bin.zip/gradle-8.14-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
-          fi
-
-          find android/ -name "build.gradle" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} + || true
-          find android/ -name "build.gradle.kts" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} + || true
-
-          if [ -f "android/gradle.properties" ]; then
-            echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
-            echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
-          fi
-
       - name: Build Debug APK
-        run: flutter build apk --debug --no-tree-shake-icons --android-skip-build-dependency-validation
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: KibriyaChat-APK
-          path: "**/build/app/outputs/flutter-apk/*.apk"
+        run: |
+          flutter build apk --debug --no-tree-shake-icons
