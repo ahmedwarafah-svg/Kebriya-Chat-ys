@@ -35,9 +35,9 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Comprehensive Code & Dependency Patch
+    - name: Auto-Fix Gradle 8.14 & Room Tools Code
       run: |
-        # 1. إصلاح pubspec وتعديل المكتبات
+        # 1. حل تعارض pubspec والمكتبات
         sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
         sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
         flutter pub remove flutter_lints || true
@@ -45,32 +45,32 @@ jobs:
         flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.10 || true
         flutter pub get
 
-        # 2. ترقية Gradle Wrapper و AGP
+        # 2. ترقية Gradle Wrapper لنسخة 8.14.0 المطلوبة بالظبط في الفيديو
         if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
-          sed -i 's/gradle-.*-all.zip/gradle-8.10.2-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
-          sed -i 's/gradle-.*-bin.zip/gradle-8.10.2-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
+          sed -i 's/gradle-.*-all.zip/gradle-8.14-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
+          sed -i 's/gradle-.*-bin.zip/gradle-8.14-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
         fi
 
-        # 3. تعديل minSdkVersion لـ 21
+        # 3. إجبار minSdkVersion ليكون 21
         find android/ -name "build.gradle" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} + || true
         find android/ -name "build.gradle.kts" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} + || true
 
-        # 4. إصلاح أخطاء أكواد Dart الشائعة التي تظهر في الـ Logs
-        find lib/ -name "*.dart" -exec sed -i 's/widget\.roomId/roomId/g' {} + || true
-        find lib/ -name "*.dart" -exec sed -i 's/if(ok!=null)/if(ok != null)/g' {} + || true
+        # 4. إصلاح خطأ roomId الموضح بالفيديو في ملف room_tools.dart
+        if [ -f "lib/screens/room_tools.dart" ]; then
+          sed -i 's/\${roomId}/\${widget.roomId}/g' lib/screens/room_tools.dart || true
+          sed -i 's/roomId/widget.roomId/g' lib/screens/room_tools.dart || true
+          sed -i 's/widget.widget.roomId/widget.roomId/g' lib/screens/room_tools.dart || true
+          sed -i 's/if(ok)/if(ok != null \&\& ok != 0)/g' lib/screens/room_tools.dart || true
+        fi
 
-        # 5. إعدادات تجنب فشل البناء
+        # 5. إعدادات تجنب فشل Gradle
         if [ -f "android/gradle.properties" ]; then
           echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
           echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
         fi
 
     - name: Build Debug APK
-      run: |
-        flutter build apk --debug \
-          --no-tree-shake-icons \
-          --android-skip-build-dependency-validation || \
-        flutter build apk --debug --no-pub
+      run: flutter build apk --debug --no-tree-shake-icons --android-skip-build-dependency-validation
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
