@@ -14,16 +14,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java 11
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '11'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.19.6'
 
       - name: Extract zip files if exists
         run: |
@@ -43,20 +43,15 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # تعطيل الخيارات المتعارضة في gradle.properties
-          if [ -f "android/gradle.properties" ]; then
-            sed -i '/android.newDsl/d' android/gradle.properties
-            sed -i '/android.defaults.buildfeatures.buildconfig/d' android/gradle.properties
-            echo "android.newDsl=false" >> android/gradle.properties
-            echo "org.gradle.warning.mode=none" >> android/gradle.properties
-          fi
+          # تعديل شرط الـ SDK في pubspec.yaml تلقائياً ليتوافق مع Flutter 3.19.6
+          sed -i 's/sdk: .*/sdk: ">=3.0.0 <4.0.0"/' pubspec.yaml
 
           # حل تعارض المكتبة
-          flutter pub add share_plus:^12.0.2
+          flutter pub add share_plus:^9.0.0
           flutter pub get
 
-          # البناء مع إلغاء التحقق الصارم من AGP
-          flutter build apk --debug --no-tree-shake-icons --build-name=1.0.0 --build-number=1
+          # البناء المستقر
+          flutter build apk --debug --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
