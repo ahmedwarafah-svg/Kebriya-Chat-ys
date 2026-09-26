@@ -25,11 +25,25 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install dependencies & Build APK
+      - name: Extract zip files if exists
         run: |
-          TARGET_DIR=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
-          echo "Found project directory at: $TARGET_DIR"
-          cd "$TARGET_DIR"
+          for f in $(find . -maxdepth 2 -name "*.zip"); do
+            echo "Unzipping $f..."
+            unzip -o "$f"
+          done
+
+      - name: Locate and Build Flutter Project
+        run: |
+          PUBSPEC_PATH=$(find . -name "pubspec.yaml" | head -n 1)
+          if [ -z "$PUBSPEC_PATH" ]; then
+            echo "List of files in repo:"
+            ls -la
+            echo "ERROR: pubspec.yaml not found!"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$PUBSPEC_PATH")
+          echo "Moving to project directory: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
           flutter pub get
           flutter build apk --debug --verbose
 
