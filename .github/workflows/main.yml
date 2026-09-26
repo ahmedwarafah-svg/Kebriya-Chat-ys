@@ -36,14 +36,15 @@ jobs:
         run: |
           PUBSPEC_PATH=$(find . -name "pubspec.yaml" | head -n 1)
           if [ -z "$PUBSPEC_PATH" ]; then
-            echo "List of files in repo:"
-            ls -la
             echo "ERROR: pubspec.yaml not found!"
             exit 1
           fi
           PROJECT_DIR=$(dirname "$PUBSPEC_PATH")
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
+          
+          # إجبار تحديث مكتبة share_plus لتوافق ZegoUIKit
+          flutter pub add share_plus:^12.0.2
           flutter pub get
           flutter build apk --debug --verbose
 
