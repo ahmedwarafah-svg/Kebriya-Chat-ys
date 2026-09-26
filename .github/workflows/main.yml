@@ -43,10 +43,17 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
           
-          # إجبار تحديث مكتبة share_plus لتوافق ZegoUIKit
+          # إضافة صلاحيات التنفيذ لـ gradlew لو موجود
+          if [ -f "android/gradlew" ]; then
+            chmod +x android/gradlew
+          fi
+
+          # حل تعارض مكتبة share_plus
           flutter pub add share_plus:^12.0.2
           flutter pub get
-          flutter build apk --debug --verbose
+          
+          # أمر البناء المحدث
+          flutter build apk --debug --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
