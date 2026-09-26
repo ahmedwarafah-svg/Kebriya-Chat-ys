@@ -35,7 +35,7 @@ jobs:
       - name: Locate and Build Flutter Project
         run: |
           PUBSPEC_PATH=$(find . -name "pubspec.yaml" | head -n 1)
-          if [ -z "$PUBSPEC_PATH" ]; me
+          if [ -z "$PUBSPEC_PATH" ]; then
             echo "ERROR: pubspec.yaml not found!"
             exit 1
           fi
@@ -43,20 +43,18 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # مسح إعدادات newDsl من كل الملفات بدون استثناء
+          # تنظيف إعدادات newDsl المشكوك فيها
           find android/ -type f \( -name "*.gradle" -o -name "*.properties" -o -name "*.kts" \) -exec sed -i '/newDsl/d' {} + || true
 
-          # إجبار عدم طلب AGP 9
-          find android/ -type f \( -name "gradle.properties" \) -exec sh -c 'echo "\nandroid.newDsl=false\nandroid.experimental.art-service.app-image=false" >> "$1"' _ {} \;
+          # إضافة التوافق لملف gradle.properties
+          find android/ -type f \( -name "gradle.properties" \) -exec sh -c 'echo "\nandroid.newDsl=false\nandroid.overridePathCheck=true" >> "$1"' _ {} \;
 
-          # منح صلاحيات Exec
+          # إعطاء صلاحيات التشغيل
           find . -name "gradlew" -exec chmod +x {} + || true
 
-          # حل تعارض المكتبة
+          # تحديث المكتبة وبناء التطبيق
           flutter pub add share_plus:^12.0.2
           flutter pub get
-
-          # البناء المباشر
           flutter build apk --debug --no-tree-shake-icons
 
       - name: Upload APK
