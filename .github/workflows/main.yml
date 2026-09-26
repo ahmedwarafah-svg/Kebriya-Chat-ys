@@ -43,19 +43,15 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
-          # تنظيف إعدادات newDsl المشكوك فيها
-          find android/ -type f \( -name "*.gradle" -o -name "*.properties" -o -name "*.kts" \) -exec sed -i '/newDsl/d' {} + || true
+          # إجبار التغاضي عن إعدادات الـ DSL في جميع الملفات
+          find . -name "gradle.properties" -exec sh -c 'echo "\nandroid.newDsl=false\nandroid.overridePathCheck=true" >> "$1"' _ {} \;
 
-          # إضافة التوافق لملف gradle.properties
-          find android/ -type f \( -name "gradle.properties" \) -exec sh -c 'echo "\nandroid.newDsl=false\nandroid.overridePathCheck=true" >> "$1"' _ {} \;
-
-          # إعطاء صلاحيات التشغيل
-          find . -name "gradlew" -exec chmod +x {} + || true
-
-          # تحديث المكتبة وبناء التطبيق
+          # حل تعارض مكتبة share_plus
           flutter pub add share_plus:^12.0.2
           flutter pub get
-          flutter build apk --debug --no-tree-shake-icons
+
+          # البناء مع توجيه الـ Gradle بتخطي كل تحذيرات الـ AGP الحادة
+          flutter build apk --debug --no-tree-shake-icons --build-attribute android.newDsl=false || flutter build apk --debug --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
