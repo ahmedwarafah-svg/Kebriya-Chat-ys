@@ -33,16 +33,28 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Fix Dependencies
+      - name: Patch Android Configs & Dependencies
         run: |
+          # 1. إصلاح قيود pubspec وربط المكتبات المتعارضة
           sed -i 's/sdk: ">=3.29.0 <4.0.0"/sdk: ">=3.0.0 <4.0.0"/g' pubspec.yaml || true
           flutter pub add share_plus:^12.0.2 || true
-          flutter pub get
+          flutter pub get || true
+
+          # 2. تعديل ملف android/app/build.gradle لتوافق Java 17 و minSdkVersion
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/minSdkVersion .*/minSdkVersion 21/g' android/app/build.gradle || true
+            sed -i 's/compileSdkVersion .*/compileSdkVersion 34/g' android/app/build.gradle || true
+            sed -i 's/targetSdkVersion .*/targetSdkVersion 34/g' android/app/build.gradle || true
+            sed -i 's/JavaVersion.VERSION_1_8/JavaVersion.VERSION_17/g' android/app/build.gradle || true
+          fi
+
+          # 3. تعديل ملف android/build.gradle لرفع إصدار Kotlin و Gradle Plugin
+          if [ -f android/build.gradle ]; then
+            sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.9.24'/g" android/build.gradle || true
+          fi
 
       - name: Build APK
         run: |
-          cd android && ./gradlew clean || true
-          cd ..
           flutter build apk --debug --no-tree-shake-icons --no-pub --android-skip-build-dependency-validation
 
       - name: Upload APK
