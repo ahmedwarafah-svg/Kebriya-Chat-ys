@@ -23,7 +23,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.24.5'
 
       - name: Extract zip files if exists
         run: |
@@ -43,6 +43,9 @@ jobs:
           echo "Moving to project directory: $PROJECT_DIR"
           cd "$PROJECT_DIR"
 
+          # تعديل شرط الـ SDK آلياً
+          sed -i 's/sdk: .*/sdk: ">=3.0.0 <4.0.0"/' pubspec.yaml
+
           # تعطيل فحص newDsl تلقائياً
           find . -name "gradle.properties" -exec sh -c '
             sed -i "/android.newDsl/d" "$1"
@@ -52,8 +55,11 @@ jobs:
           # إعطاء صلاحيات التشغيل
           find . -name "gradlew" -exec chmod +x {} + || true
 
-          # تنزيل الحزم والبناء بفرض التجاهل للتحذيرات
-          flutter pub get
+          # تحديث المكتبة بحل التعارض وتثبيت الحزم بالاستثناءات
+          flutter pub add share_plus:^12.0.2 || true
+          flutter pub get --override-dependency
+
+          # بناء التطبيق
           flutter build apk --debug --no-tree-shake-icons --suppress-analytics
 
       - name: Upload APK
