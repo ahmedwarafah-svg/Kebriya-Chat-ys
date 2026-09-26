@@ -35,8 +35,9 @@ jobs:
       with:
         channel: 'stable'
 
-    - name: Auto Fix & Patch
+    - name: Fix Dependencies & Clean Code
       run: |
+        # 1. إصلاح pubspec.yaml والاعتماديات المتعارضة
         sed -i 's/sdk: ">=3.29.0/sdk: ">=3.0.0/g' pubspec.yaml || true
         sed -i 's/flutter: ">=3.29.0/flutter: ">=3.0.0/g' pubspec.yaml || true
         flutter pub remove flutter_lints || true
@@ -44,19 +45,25 @@ jobs:
         flutter pub add zego_uikit_prebuilt_live_audio_room:^3.16.10 || true
         flutter pub get
 
+        # 2. إرجاع أي تعديل خاطئ تم في ملف room_tools.dart
+        if [ -f "lib/screens/room_tools.dart" ]; then
+          sed -i 's/widget\.widget\./widget\./g' lib/screens/room_tools.dart || true
+        fi
+
+        # 3. ضبط Gradle Wrapper لنسخة 8.14
         if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
           sed -i 's/gradle-.*-all.zip/gradle-8.14-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
           sed -i 's/gradle-.*-bin.zip/gradle-8.14-bin.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
         fi
 
+        # 4. تعديل minSdkVersion ليكون 21
         find android/ -name "build.gradle" -exec sed -i 's/minSdkVersion .*/minSdkVersion 21/g' {} + || true
         find android/ -name "build.gradle.kts" -exec sed -i 's/minSdkVersion = .*/minSdkVersion = 21/g' {} + || true
 
-        # Clean dart issues in room_tools
-        if [ -f "lib/screens/room_tools.dart" ]; then
-          sed -i 's/widget\.roomId/roomId_temp/g' lib/screens/room_tools.dart || true
-          sed -i 's/roomId/widget.roomId/g' lib/screens/room_tools.dart || true
-          sed -i 's/roomId_temp/widget.roomId/g' lib/screens/room_tools.dart || true
+        # 5. إعدادات الذاكرة وتخطي الأخطاء الثانوية
+        if [ -f "android/gradle.properties" ]; then
+          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m" >> android/gradle.properties
+          echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
         fi
 
     - name: Build Debug APK
@@ -67,3 +74,4 @@ jobs:
       with:
         name: KibriyaChat-APK
         path: "**/build/app/outputs/flutter-apk/*.apk"
+concurrency: 
